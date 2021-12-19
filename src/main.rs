@@ -89,7 +89,12 @@ impl QueryRoot {
             .buffer_unordered(50)
             .fold(Ok(HashMap::new()), |output, next| async {
                 let mut output = output?;
-                let (id, story) = next?;
+                let (id, mut story) = next?;
+
+                // If there is no URL, the url is the item
+                if story.url.is_none() {
+                    story.url = Some(format!("https://news.ycombinator.com/item?id={}", story.id));
+                }
 
                 output.insert(id, story);
                 Ok::<_, anyhow::Error>(output)
