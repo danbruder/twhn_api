@@ -8,7 +8,7 @@ use async_graphql_warp::{GraphQLBadRequest, GraphQLResponse};
 use futures::{stream, StreamExt};
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use warp::{http::Response as HttpResponse, Filter, Rejection};
+use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 
 #[tokio::main]
 async fn main() {
@@ -29,6 +29,12 @@ async fn main() {
             .body(playground_source(GraphQLPlaygroundConfig::new("/")))
     });
 
+    let cors = warp::cors()
+        .allow_methods(&[Method::POST, Method::GET, Method::OPTIONS])
+        .allow_credentials(true)
+        .allow_headers(vec!["content-type", "X-Auth-Token", "X-Admin-Token"])
+        .allow_any_origin();
+
     let routes = graphql_playground
         .or(graphql_post)
         .recover(|err: Rejection| async move {
@@ -43,7 +49,8 @@ async fn main() {
                 "INTERNAL_SERVER_ERROR".to_string(),
                 StatusCode::INTERNAL_SERVER_ERROR,
             ))
-        });
+        })
+        .with(cors);
 
     println!("Playground: http://localhost:8000");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
