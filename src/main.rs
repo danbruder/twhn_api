@@ -106,6 +106,23 @@ impl QueryRoot {
             .filter_map(|id| stories.remove(&id))
             .collect())
     }
+
+    async fn story_by_id(&self, id: usize) -> Result<Story> {
+        let mut story = reqwest::get(format!(
+            "https://hacker-news.firebaseio.com/v0/item/{}.json",
+            id
+        ))
+        .await?
+        .json::<Story>()
+        .await?;
+
+        // If there is no URL, the url is the item
+        if story.url.is_none() {
+            story.url = Some(format!("https://news.ycombinator.com/item?id={}", story.id));
+        }
+
+        Ok(story)
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, SimpleObject, Debug)]
