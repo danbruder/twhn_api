@@ -94,4 +94,12 @@ impl QueryRoot {
             .await
             .map(|i| i.and_then(|j| j.as_story()))
     }
+
+    async fn comment_by_id(&self, id: u32) -> Result<Option<Comment>> {
+        let client = HnClient::new();
+        client
+            .get_item(id)
+            .await
+            .map(|i| i.and_then(|j| j.as_comment()))
+    }
 }
