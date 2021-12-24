@@ -1,6 +1,7 @@
 //! Item types returned by the API.
 
 use crate::client::HnClient;
+use ammonia::clean;
 use async_graphql::*;
 use serde::Deserialize;
 
@@ -53,6 +54,10 @@ impl Story {
     async fn comments(&self) -> Result<Vec<Comment>> {
         comments(self.kids.clone().unwrap_or_default()).await
     }
+
+    async fn safe_text(&self) -> String {
+        clean(&self.text.clone().unwrap_or("".into()))
+    }
 }
 
 /// A comment.
@@ -81,6 +86,10 @@ impl Comment {
 
     async fn comments(&self) -> Result<Vec<Comment>> {
         comments(self.kids.clone().unwrap_or_default()).await
+    }
+
+    async fn safe_text(&self) -> String {
+        clean(&self.text)
     }
 }
 
