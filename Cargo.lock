@@ -1470,11 +1470,13 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "async-graphql-warp",
+ "async-trait",
  "futures",
  "http",
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "warp",
 ]

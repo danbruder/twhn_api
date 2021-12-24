@@ -1,14 +1,20 @@
-use anyhow::Result;
-use std::collections::HashMap;
 use std::convert::Infallible;
 
+use ::http::StatusCode;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema, SimpleObject};
+use async_graphql::*;
 use async_graphql_warp::{GraphQLBadRequest, GraphQLResponse};
-use futures::{stream, StreamExt};
-use http::StatusCode;
-use serde::{Deserialize, Serialize};
 use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
+
+#[allow(dead_code)]
+mod client;
+mod result;
+#[allow(dead_code)]
+mod types;
+
+use client::HnClient;
+use result::Result;
+use types::*;
 
 #[tokio::main]
 async fn main() {
@@ -64,70 +70,28 @@ impl QueryRoot {
         "1.0".into()
     }
 
-    async fn top_stories(&self, limit: Option<usize>) -> Result<Vec<Story>> {
+    async fn top_stories(&self, limit: Option<u32>) -> Result<Vec<Story>> {
+        let client = HnClient::new();
+
         let limit = limit.unwrap_or(50);
         let limit = limit.min(50);
-        let ids = reqwest::get("https://hacker-news.firebaseio.com/v0/topstories.json")
-            .await?
-            .json::<Vec<i32>>()
-            .await?;
+        let ids = client.get_top_stories().await?;
 
-        let mut stories = stream::iter(ids.clone())
-            .take(limit as usize)
-            .map(|id| async move {
-                Ok::<_, reqwest::Error>((
-                    id,
-                    reqwest::get(format!(
-                        "https://hacker-news.firebaseio.com/v0/item/{}.json",
-                        id
-                    ))
-                    .await?
-                    .json::<Story>()
-                    .await?,
-                ))
-            })
-            .buffer_unordered(50)
-            .fold(Ok(HashMap::new()), |output, next| async {
-                let mut output = output?;
-                let (id, mut story) = next?;
-
-                // If there is no URL, the url is the item
-                if story.url.is_none() {
-                    story.url = Some(format!("https://news.ycombinator.com/item?id={}", story.id));
-                }
-
-                output.insert(id, story);
-                Ok::<_, anyhow::Error>(output)
-            })
+        let mut stories = client
+            .get_items(ids.clone().into_iter().take(limit as usize).collect())
             .await?;
 
         Ok(ids
             .into_iter()
-            .filter_map(|id| stories.remove(&id))
+            .filter_map(|id| stories.remove(&id).and_then(|s| s.as_story()))
             .collect())
     }
 
-    async fn story_by_id(&self, id: usize) -> Result<Story> {
-        let mut story = reqwest::get(format!(
-            "https://hacker-news.firebaseio.com/v0/item/{}.json",
-            id
-        ))
-        .await?
-        .json::<Story>()
-        .await?;
-
-        // If there is no URL, the url is the item
-        if story.url.is_none() {
-            story.url = Some(format!("https://news.ycombinator.com/item?id={}", story.id));
-        }
-
-        Ok(story)
+    async fn story_by_id(&self, id: u32) -> Result<Option<Story>> {
+        let client = HnClient::new();
+        client
+            .get_item(id)
+            .await
+            .map(|i| i.and_then(|j| j.as_story()))
     }
-}
-
-#[derive(Clone, Deserialize, Serialize, SimpleObject, Debug)]
-struct Story {
-    id: i32,
-    title: String,
-    url: Option<String>,
 }
