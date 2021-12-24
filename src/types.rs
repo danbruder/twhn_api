@@ -58,7 +58,6 @@ impl Story {
 
 /// A comment.
 #[derive(Debug, Deserialize, SimpleObject)]
-#[graphql(complex)]
 pub struct Comment {
     /// The item's unique id.
     pub id: u32,
