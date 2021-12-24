@@ -44,15 +44,7 @@ pub struct Story {
 #[ComplexObject]
 impl Story {
     async fn comments(&self) -> Result<Vec<Comment>> {
-        let client = HnClient::new();
-        let kids = self.kids.clone().unwrap_or_default();
-
-        Ok(client
-            .get_items(kids)
-            .await?
-            .into_iter()
-            .filter_map(|(_, i)| i.as_comment())
-            .collect())
+        comments(self.kids.clone().unwrap_or_default()).await
     }
 }
 
@@ -77,16 +69,18 @@ pub struct Comment {
 #[ComplexObject]
 impl Comment {
     async fn comments(&self) -> Result<Vec<Comment>> {
-        let client = HnClient::new();
-        let kids = self.kids.clone().unwrap_or_default();
-
-        Ok(client
-            .get_items(kids)
-            .await?
-            .into_iter()
-            .filter_map(|(_, i)| i.as_comment())
-            .collect())
+        comments(self.kids.clone().unwrap_or_default()).await
     }
+}
+
+async fn comments(ids: Vec<u32>) -> Result<Vec<Comment>> {
+    let client = HnClient::new();
+    let mut items = client.get_items(ids.clone()).await?;
+
+    Ok(ids
+        .into_iter()
+        .filter_map(|id| items.remove(&id).and_then(|s| s.as_comment()))
+        .collect())
 }
 
 /// A job.
