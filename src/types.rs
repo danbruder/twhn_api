@@ -58,6 +58,7 @@ impl Story {
 
 /// A comment.
 #[derive(Debug, Deserialize, SimpleObject)]
+#[graphql(complex)]
 pub struct Comment {
     /// The item's unique id.
     pub id: u32,
@@ -71,6 +72,21 @@ pub struct Comment {
     pub text: String,
     /// Creation date of the item, in Unix Time.
     pub time: u64,
+}
+
+#[ComplexObject]
+impl Comment {
+    async fn comments(&self) -> Result<Vec<Comment>> {
+        let client = HnClient::new();
+        let kids = self.kids.clone().unwrap_or_default();
+
+        Ok(client
+            .get_items(kids)
+            .await?
+            .into_iter()
+            .filter_map(|(_, i)| i.as_comment())
+            .collect())
+    }
 }
 
 /// A job.

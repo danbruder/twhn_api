@@ -35,7 +35,8 @@ impl HnClient {
             .send()
             .await?
             .json()
-            .await?)
+            .await
+            .ok())
     }
 
     /// Return the items with the specified ids.

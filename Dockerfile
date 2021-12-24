@@ -1,23 +1,23 @@
 # Backend ---------------
-FROM rust:1.57.0 as backend-planner
+FROM rust:1.57.0 as planner
 WORKDIR /app
 RUN cargo install cargo-chef 
-COPY backend .
+COPY . .
 RUN cargo chef prepare  --recipe-path recipe.json
 
-FROM rust:1.57.0 as backend-cacher
+FROM rust:1.57.0 as cacher
 WORKDIR /app
 RUN cargo install cargo-chef
-COPY --from=backend-planner /app/recipe.json recipe.json
+COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-# Backend Builder. Using the same image to save download times, although
+# Builder. Using the same image to save download times, although
 # the base rust image probably shares layers with the node version
-FROM rust:1.57.0 AS backend-builder
+FROM rust:1.57.0 AS builder
 WORKDIR /app
 COPY . .
-COPY --from=backend-cacher /app/target target
-COPY --from=backend-cacher $CARGO_HOME $CARGO_HOME
+COPY --from=cacher /app/target target
+COPY --from=cacher $CARGO_HOME $CARGO_HOME
 RUN cargo build --release
 
 # Runtime stage
@@ -28,6 +28,6 @@ RUN apt-get update -y \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=backend-builder /app/target/release/twhn_api twhn_api
+COPY --from=builder /app/target/release/twhn_api /usr/local/bin/twhn_api
 EXPOSE 8000
 CMD ["twhn_api"]
