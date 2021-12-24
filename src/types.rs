@@ -3,6 +3,7 @@
 use crate::client::HnClient;
 use ammonia::clean;
 use async_graphql::*;
+use chrono::{serde::ts_seconds, DateTime, Utc};
 use serde::Deserialize;
 
 /// An API item, for example a story or a comment.
@@ -39,7 +40,8 @@ pub struct Story {
     /// The story text. HTML.
     pub text: Option<String>,
     /// Creation date of the item, in Unix Time.
-    pub time: u64,
+    #[serde(with = "ts_seconds")]
+    time: DateTime<Utc>,
 }
 
 #[ComplexObject]
@@ -58,6 +60,10 @@ impl Story {
     async fn safe_text(&self) -> String {
         clean(&self.text.clone().unwrap_or("".into()))
     }
+
+    async fn human_time(&self) -> String {
+        chrono_humanize::HumanTime::from(self.time.clone()).to_string()
+    }
 }
 
 /// A comment.
@@ -75,7 +81,8 @@ pub struct Comment {
     /// The comment text. HTML.
     pub text: String,
     /// Creation date of the item, in Unix Time.
-    pub time: u64,
+    #[serde(with = "ts_seconds")]
+    time: DateTime<Utc>,
 }
 
 #[ComplexObject]
@@ -90,6 +97,10 @@ impl Comment {
 
     async fn safe_text(&self) -> String {
         clean(&self.text)
+    }
+
+    async fn human_time(&self) -> String {
+        chrono_humanize::HumanTime::from(self.time.clone()).to_string()
     }
 }
 
