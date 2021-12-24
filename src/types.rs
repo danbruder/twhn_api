@@ -43,6 +43,13 @@ pub struct Story {
 
 #[ComplexObject]
 impl Story {
+    async fn item_url(&self) -> String {
+        match &self.url {
+            Some(url) => url.to_string(),
+            None => format!("https://news.ycombinator.com/item?id={}", &self.id),
+        }
+    }
+
     async fn comments(&self) -> Result<Vec<Comment>> {
         comments(self.kids.clone().unwrap_or_default()).await
     }
@@ -68,6 +75,10 @@ pub struct Comment {
 
 #[ComplexObject]
 impl Comment {
+    async fn item_url(&self) -> String {
+        format!("https://news.ycombinator.com/item?id={}", &self.id)
+    }
+
     async fn comments(&self) -> Result<Vec<Comment>> {
         comments(self.kids.clone().unwrap_or_default()).await
     }
@@ -142,12 +153,3 @@ impl Item {
         }
     }
 }
-
-// impl Story {
-//     pub fn url(&self) -> String {
-//         match self.url {
-//             Some(url) => url,
-//             None => format!("https://news.ycombinator.com/item?id={}", self.id),
-//         }
-//     }
-// }
