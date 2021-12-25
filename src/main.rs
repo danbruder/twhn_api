@@ -70,6 +70,28 @@ impl QueryRoot {
         "1.0".into()
     }
 
+    async fn top_items(&self, limit: Option<u32>) -> Result<Vec<Item>> {
+        let client = HnClient::new();
+
+        let limit = limit.unwrap_or(50);
+        let limit = limit.min(50);
+        let ids = client.get_top_stories().await?;
+
+        let mut stories = client
+            .get_items(ids.clone().into_iter().take(limit as usize).collect())
+            .await?;
+
+        Ok(ids
+            .into_iter()
+            .filter_map(|id| stories.remove(&id))
+            .collect())
+    }
+
+    async fn item_by_id(&self, id: u32) -> Result<Option<Item>> {
+        let client = HnClient::new();
+        client.get_item(id).await
+    }
+
     async fn top_stories(&self, limit: Option<u32>) -> Result<Vec<Story>> {
         let client = HnClient::new();
 
