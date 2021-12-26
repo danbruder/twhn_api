@@ -66,10 +66,6 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn version(&self) -> String {
-        "1.0".into()
-    }
-
     async fn top_items(&self, limit: Option<u32>) -> Result<Vec<Item>> {
         let client = HnClient::new();
 
@@ -90,38 +86,5 @@ impl QueryRoot {
     async fn item_by_id(&self, id: u32) -> Result<Option<Item>> {
         let client = HnClient::new();
         client.get_item(id).await
-    }
-
-    async fn top_stories(&self, limit: Option<u32>) -> Result<Vec<Story>> {
-        let client = HnClient::new();
-
-        let limit = limit.unwrap_or(50);
-        let limit = limit.min(50);
-        let ids = client.get_top_stories().await?;
-
-        let mut stories = client
-            .get_items(ids.clone().into_iter().take(limit as usize).collect())
-            .await?;
-
-        Ok(ids
-            .into_iter()
-            .filter_map(|id| stories.remove(&id).and_then(|s| s.as_story()))
-            .collect())
-    }
-
-    async fn story_by_id(&self, id: u32) -> Result<Option<Story>> {
-        let client = HnClient::new();
-        client
-            .get_item(id)
-            .await
-            .map(|i| i.and_then(|j| j.as_story()))
-    }
-
-    async fn comment_by_id(&self, id: u32) -> Result<Option<Comment>> {
-        let client = HnClient::new();
-        client
-            .get_item(id)
-            .await
-            .map(|i| i.and_then(|j| j.as_comment()))
     }
 }

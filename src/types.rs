@@ -15,8 +15,6 @@ pub enum Item {
     Story(Story),
     /// A comment.
     Comment(Comment),
-    /// A job.
-    Job(Job),
 }
 
 /// A story.
@@ -44,28 +42,6 @@ pub struct Story {
     time: DateTime<Utc>,
 }
 
-#[ComplexObject]
-impl Story {
-    async fn item_url(&self) -> String {
-        match &self.url {
-            Some(url) => url.to_string(),
-            None => format!("https://news.ycombinator.com/item?id={}", &self.id),
-        }
-    }
-
-    async fn comments(&self) -> Result<Vec<Comment>> {
-        comments(self.kids.clone().unwrap_or_default()).await
-    }
-
-    async fn safe_text(&self) -> String {
-        clean(&self.text.clone().unwrap_or("".into()))
-    }
-
-    async fn human_time(&self) -> String {
-        chrono_humanize::HumanTime::from(self.time.clone()).to_string()
-    }
-}
-
 /// A comment.
 #[derive(Debug, Deserialize, SimpleObject)]
 #[graphql(complex)]
@@ -86,13 +62,36 @@ pub struct Comment {
 }
 
 #[ComplexObject]
-impl Comment {
-    async fn item_url(&self) -> String {
-        format!("https://news.ycombinator.com/item?id={}", &self.id)
+impl Story {
+    async fn children(&self) -> Result<Vec<Item>> {
+        let client = HnClient::new();
+        Ok(client
+            .get_items(self.kids.clone().unwrap_or_default())
+            .await?
+            .drain()
+            .map(|(_, v)| v)
+            .collect())
     }
 
-    async fn comments(&self) -> Result<Vec<Comment>> {
-        comments(self.kids.clone().unwrap_or_default()).await
+    async fn safe_text(&self) -> String {
+        clean(&self.text.clone().unwrap_or("".into()))
+    }
+
+    async fn human_time(&self) -> String {
+        chrono_humanize::HumanTime::from(self.time.clone()).to_string()
+    }
+}
+
+#[ComplexObject]
+impl Comment {
+    async fn children(&self) -> Result<Vec<Item>> {
+        let client = HnClient::new();
+        Ok(client
+            .get_items(self.kids.clone().unwrap_or_default())
+            .await?
+            .drain()
+            .map(|(_, v)| v)
+            .collect())
     }
 
     async fn safe_text(&self) -> String {
@@ -102,33 +101,6 @@ impl Comment {
     async fn human_time(&self) -> String {
         chrono_humanize::HumanTime::from(self.time.clone()).to_string()
     }
-}
-
-async fn comments(ids: Vec<u32>) -> Result<Vec<Comment>> {
-    let client = HnClient::new();
-    let mut items = client.get_items(ids.clone()).await?;
-
-    Ok(ids
-        .into_iter()
-        .filter_map(|id| items.remove(&id).and_then(|s| s.as_comment()))
-        .collect())
-}
-
-/// A job.
-#[derive(Debug, Deserialize, SimpleObject)]
-pub struct Job {
-    /// The item's unique id.
-    pub id: u32,
-    /// The story's score, or the votes for a pollopt.
-    pub score: u32,
-    /// The job text. HTML.
-    pub text: Option<String>,
-    /// Creation date of the item, in Unix Time.
-    pub time: u64,
-    /// The title of the job.
-    pub title: String,
-    /// The URL of the story.
-    pub url: Option<String>,
 }
 
 /// A user profile.
