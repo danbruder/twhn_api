@@ -65,11 +65,12 @@ pub struct Comment {
 impl Story {
     async fn children(&self) -> Result<Vec<Item>> {
         let client = HnClient::new();
-        Ok(client
-            .get_items(self.kids.clone().unwrap_or_default())
-            .await?
-            .drain()
-            .map(|(_, v)| v)
+        let kids = self.kids.clone().unwrap_or_default();
+        let mut items = client.get_items(kids.clone()).await?;
+
+        Ok(kids
+            .into_iter()
+            .filter_map(|id| items.remove(&id))
             .collect())
     }
 
@@ -86,11 +87,12 @@ impl Story {
 impl Comment {
     async fn children(&self) -> Result<Vec<Item>> {
         let client = HnClient::new();
-        Ok(client
-            .get_items(self.kids.clone().unwrap_or_default())
-            .await?
-            .drain()
-            .map(|(_, v)| v)
+        let kids = self.kids.clone().unwrap_or_default();
+        let mut items = client.get_items(kids.clone()).await?;
+
+        Ok(kids
+            .into_iter()
+            .filter_map(|id| items.remove(&id))
             .collect())
     }
 
