@@ -11,4 +11,20 @@ pub enum Error {
     /// ReqwestError
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
+    #[error("query error")]
+    GraphqlError(async_graphql::Error),
+    #[error("database error")]
+    SqliteError(sqlx::error::Error),
+}
+
+impl From<async_graphql::Error> for Error {
+    fn from(err: async_graphql::Error) -> Self {
+        Error::GraphqlError(err)
+    }
+}
+
+impl From<sqlx::error::Error> for Error {
+    fn from(err: sqlx::error::Error) -> Self {
+        Error::SqliteError(err)
+    }
 }

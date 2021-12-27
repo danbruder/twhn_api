@@ -4,21 +4,31 @@ use ::http::StatusCode;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::*;
 use async_graphql_warp::{GraphQLBadRequest, GraphQLResponse};
+use sqlx::sqlite::SqlitePoolOptions;
 use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 
 #[allow(dead_code)]
-mod client;
-mod result;
-#[allow(dead_code)]
-mod types;
+mod hn_client;
 
-use client::HnClient;
-use result::Result;
-use types::*;
+mod domain;
+mod result;
+mod schema;
+mod store;
+
+use schema::QueryRoot;
+use store::Store;
 
 #[tokio::main]
 async fn main() {
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect("sqlite://./data.sqlite")
+        .await
+        .expect("Could not connect to sqlite");
+    let store = Store::new(pool);
+    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+        .data(store)
+        .finish();
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
         |(schema, request): (
@@ -60,31 +70,4 @@ async fn main() {
 
     println!("Playground: http://localhost:8000");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
-}
-
-pub struct QueryRoot;
-
-#[Object]
-impl QueryRoot {
-    async fn top_items(&self, limit: Option<u32>) -> Result<Vec<Item>> {
-        let client = HnClient::new();
-
-        let limit = limit.unwrap_or(50);
-        let limit = limit.min(50);
-        let ids = client.get_top_stories().await?;
-
-        let mut stories = client
-            .get_items(ids.clone().into_iter().take(limit as usize).collect())
-            .await?;
-
-        Ok(ids
-            .into_iter()
-            .filter_map(|id| stories.remove(&id))
-            .collect())
-    }
-
-    async fn item_by_id(&self, id: u32) -> Result<Option<Item>> {
-        let client = HnClient::new();
-        client.get_item(id).await
-    }
 }
