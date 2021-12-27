@@ -2065,6 +2065,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "chrono-humanize",
+ "dotenv",
  "futures",
  "http",
  "reqwest",

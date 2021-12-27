@@ -1,10 +1,12 @@
 use std::convert::Infallible;
+use std::env;
 
 use ::http::StatusCode;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::*;
 use async_graphql_warp::{GraphQLBadRequest, GraphQLResponse};
-use sqlx::sqlite::SqlitePoolOptions;
+use dotenv::dotenv;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 
 #[allow(dead_code)]
@@ -20,11 +22,16 @@ use store::Store;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL").unwrap_or("/data/data.sqlite".into());
+
+    let options = SqliteConnectOptions::new()
+        .filename(database_url)
+        .create_if_missing(true);
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect("sqlite://./data.sqlite")
-        .await
-        .expect("Could not connect to sqlite");
+        .connect_lazy_with(options);
+
     let store = Store::new(pool);
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(store)
