@@ -25,14 +25,14 @@ async fn main() {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").unwrap_or("/data/data.sqlite".into());
 
-    let options = SqliteConnectOptions::new()
-        .filename(database_url)
-        .create_if_missing(true);
-    let pool = SqlitePoolOptions::new()
-        .max_connections(5)
-        .connect_lazy_with(options);
+    // let options = SqliteConnectOptions::new()
+    //     .filename(database_url)
+    //     .create_if_missing(true);
+    // let pool = SqlitePoolOptions::new()
+    //     .max_connections(5)
+    //     .connect_lazy_with(options);
 
-    let store = Store::new(pool);
+    let store = Store::new();
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(store)
         .finish();

@@ -5,13 +5,14 @@ use sqlx::sqlite::SqlitePool;
 
 pub struct Store {
     client: HnClient,
-    pool: SqlitePool,
+    //pool: SqlitePool,
 }
 
 impl Store {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new() -> Self {
+        //pub fn new(pool: SqlitePool) -> Self {
         let client = HnClient::new();
-        Self { client, pool }
+        Self { client }
     }
 
     pub async fn get_item(&self, id: u32) -> Result<Option<Item>> {
