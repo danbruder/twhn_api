@@ -1,12 +1,7 @@
 use std::time::Duration;
 
-use crate::{
-    domain::Item,
-    result::{Error, Result},
-};
-use futures::{stream, StreamExt};
+use crate::{domain::Item, result::Result};
 use reqwest::{self, Client};
-use std::collections::HashMap;
 
 static API_BASE_URL: &str = "https://hacker-news.firebaseio.com/v0";
 
@@ -32,20 +27,6 @@ impl HnClient {
             .json()
             .await
             .ok())
-    }
-
-    pub async fn get_items(&self, ids: Vec<u32>) -> Result<HashMap<u32, Item>> {
-        stream::iter(ids)
-            .map(|id| async move { Ok::<_, Error>((id, self.get_item(id).await?)) })
-            .buffer_unordered(50)
-            .fold(Ok(HashMap::new()), |output, next| async {
-                let mut output = output?;
-                if let (id, Some(story)) = next? {
-                    output.insert(id, story);
-                }
-                Ok(output)
-            })
-            .await
     }
 
     pub async fn get_max_item_id(&self) -> Result<u32> {

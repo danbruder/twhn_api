@@ -2,7 +2,7 @@ use chrono::{serde::ts_seconds, DateTime, Utc};
 use serde::Deserialize;
 
 /// A story.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Story {
     /// The item's unique id.
     pub id: u32,

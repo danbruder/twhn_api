@@ -7,7 +7,7 @@ use comment::Comment;
 use story::Story;
 
 /// An API item, for example a story or a comment.
-#[derive(Debug, Deserialize, Union)]
+#[derive(Debug, Clone, Deserialize, Union)]
 #[serde(tag = "type")]
 #[serde(rename_all = "lowercase")]
 pub enum Item {
@@ -15,4 +15,13 @@ pub enum Item {
     Story(Story),
     /// A comment.
     Comment(Comment),
+}
+
+impl Item {
+    pub fn id(&self) -> u32 {
+        match self {
+            Item::Story(story) => story.id,
+            Item::Comment(comment) => comment.id,
+        }
+    }
 }

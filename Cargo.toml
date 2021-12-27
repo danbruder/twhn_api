@@ -19,9 +19,9 @@ thiserror = "1.0.25"
 ammonia = "3.1.1"
 chrono = {version = "0.4.19", features = ["serde"]}
 chrono-humanize = "0.2.1"
-# tokio + rustls
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls" , "sqlite", "migrate", "macros", "uuid", "chrono", "offline"] }
 dotenv = "0.15.0"
+dashmap = "4.0.2"
 
 
 [dev-dependencies]
