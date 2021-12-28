@@ -133,6 +133,13 @@ impl Comment {
             .collect())
     }
 
+    async fn ancestors(&self, ctx: &Context<'_>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let items = store.get_ancestors(self.id).await?;
+
+        Ok(items.into_iter().map(|(_, item)| item).collect())
+    }
+
     async fn descendants(&self, ctx: &Context<'_>) -> Result<Vec<Item>> {
         let store = ctx.data::<Store>()?;
         let items = store.get_descendants(self.id).await?;

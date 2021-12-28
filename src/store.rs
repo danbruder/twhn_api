@@ -54,18 +54,41 @@ impl Store {
         let mut results = HashMap::new();
 
         if let Some(item) = self.get_item(id).await? {
-            let mut kids = item.kids();
+            let mut to_fetch = item.kids();
 
-            while kids.len() > 0 {
-                let children = self.get_items(kids.clone()).await?;
-                kids = vec![];
+            while to_fetch.len() > 0 {
+                let children = self.get_items(to_fetch.clone()).await?;
+                to_fetch = vec![];
                 for (id, child) in children.into_iter() {
-                    kids.extend(child.kids());
+                    to_fetch.extend(child.kids());
                     results.insert(id, child);
                 }
 
                 // fuse
-                if results.len() > 100_000 {
+                if results.len() > 10_000 {
+                    break;
+                }
+            }
+        }
+
+        Ok(results)
+    }
+
+    pub async fn get_ancestors(&self, id: u32) -> Result<HashMap<u32, Item>> {
+        let mut results = HashMap::new();
+
+        if let Some(item) = self.get_item(id).await? {
+            let mut to_fetch = item.parent();
+
+            while let Some(parent_id) = to_fetch {
+                to_fetch = None;
+                if let Some(parent) = self.get_item(parent_id).await? {
+                    to_fetch = parent.parent();
+                    results.insert(parent_id, parent);
+                }
+
+                // fuse
+                if results.len() > 10_000 {
                     break;
                 }
             }

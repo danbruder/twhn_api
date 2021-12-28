@@ -31,4 +31,11 @@ impl Item {
             Item::Comment(comment) => comment.kids.clone().unwrap_or_default(),
         }
     }
+
+    pub fn parent(&self) -> Option<u32> {
+        match self {
+            Item::Comment(comment) => Some(comment.parent),
+            _ => None,
+        }
+    }
 }
