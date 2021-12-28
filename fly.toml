@@ -38,6 +38,3 @@ processes = []
     restart_limit = 0
     timeout = "2s"
 
-[mounts]
-source="data"
-destination="/app/data"
