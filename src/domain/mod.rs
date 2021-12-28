@@ -24,4 +24,11 @@ impl Item {
             Item::Comment(comment) => comment.id,
         }
     }
+
+    pub fn kids(&self) -> Vec<u32> {
+        match self {
+            Item::Story(story) => story.kids.clone().unwrap_or_default(),
+            Item::Comment(comment) => comment.kids.clone().unwrap_or_default(),
+        }
+    }
 }

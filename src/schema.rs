@@ -37,7 +37,7 @@ impl Story {
         &self.id
     }
 
-    async fn descendants(&self) -> &u32 {
+    async fn total_comment_count(&self) -> &u32 {
         &self.descendants
     }
 
@@ -78,6 +78,13 @@ impl Story {
             .into_iter()
             .filter_map(|id| items.remove(&id))
             .collect())
+    }
+
+    async fn descendants(&self, ctx: &Context<'_>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let items = store.get_descendants(self.id).await?;
+
+        Ok(items.into_iter().map(|(_, item)| item).collect())
     }
 
     async fn safe_text(&self) -> String {
@@ -124,6 +131,13 @@ impl Comment {
             .into_iter()
             .filter_map(|id| items.remove(&id))
             .collect())
+    }
+
+    async fn descendants(&self, ctx: &Context<'_>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let items = store.get_descendants(self.id).await?;
+
+        Ok(items.into_iter().map(|(_, item)| item).collect())
     }
 
     async fn safe_text(&self) -> String {

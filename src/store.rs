@@ -10,7 +10,6 @@ use futures::{stream, StreamExt};
 
 pub struct Store {
     client: HnClient,
-    top_story_ids_cache: Vec<u32>,
     item_cache: DashMap<u32, Item>,
 }
 
@@ -20,7 +19,6 @@ impl Store {
 
         Self {
             client,
-            top_story_ids_cache: vec![],
             item_cache: DashMap::new(),
         }
     }
@@ -50,6 +48,30 @@ impl Store {
                 Ok(output)
             })
             .await
+    }
+
+    pub async fn get_descendants(&self, id: u32) -> Result<HashMap<u32, Item>> {
+        let mut results = HashMap::new();
+
+        if let Some(item) = self.get_item(id).await? {
+            let mut kids = item.kids();
+
+            while kids.len() > 0 {
+                let children = self.get_items(kids.clone()).await?;
+                kids = vec![];
+                for (id, child) in children.into_iter() {
+                    kids.extend(child.kids());
+                    results.insert(id, child);
+                }
+
+                // fuse
+                if results.len() > 100_000 {
+                    break;
+                }
+            }
+        }
+
+        Ok(results)
     }
 
     pub async fn get_top_stories(&self) -> Result<Vec<u32>> {
