@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 
 pub struct QueryRoot;
 use crate::{
-    domain::{comment::Comment, story::Story, Item},
+    domain::{comment::Comment, job::Job, story::Story, Item},
     result::Result,
     store::Store,
 };
@@ -149,6 +149,41 @@ impl Comment {
 
     async fn safe_text(&self) -> String {
         clean(&self.text)
+    }
+
+    async fn human_time(&self) -> String {
+        chrono_humanize::HumanTime::from(self.time.clone()).to_string()
+    }
+}
+
+#[Object]
+impl Job {
+    async fn id(&self) -> &u32 {
+        &self.id
+    }
+
+    async fn score(&self) -> &u32 {
+        &self.score
+    }
+
+    async fn title(&self) -> &str {
+        &self.title
+    }
+
+    async fn url(&self) -> &Option<String> {
+        &self.url
+    }
+
+    async fn text(&self) -> String {
+        self.text.clone().unwrap_or_default()
+    }
+
+    async fn time(&self) -> &DateTime<Utc> {
+        &self.time
+    }
+
+    async fn safe_text(&self) -> String {
+        clean(&self.text.clone().unwrap_or_default())
     }
 
     async fn human_time(&self) -> String {

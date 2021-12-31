@@ -2,8 +2,10 @@ use async_graphql::*;
 use serde::{Deserialize, Serialize};
 
 pub mod comment;
+pub mod job;
 pub mod story;
 use comment::Comment;
+use job::Job;
 use story::Story;
 
 /// An API item, for example a story or a comment.
@@ -15,6 +17,8 @@ pub enum Item {
     Story(Story),
     /// A comment.
     Comment(Comment),
+    /// A job.
+    Job(Job),
 }
 
 impl Item {
@@ -22,6 +26,7 @@ impl Item {
         match self {
             Item::Story(story) => story.id,
             Item::Comment(comment) => comment.id,
+            Item::Job(job) => job.id,
         }
     }
 
@@ -29,6 +34,7 @@ impl Item {
         match self {
             Item::Story(story) => story.kids.clone().unwrap_or_default(),
             Item::Comment(comment) => comment.kids.clone().unwrap_or_default(),
+            Item::Job(_) => vec![],
         }
     }
 
