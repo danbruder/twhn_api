@@ -1,8 +1,8 @@
 use chrono::{serde::ts_seconds, DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// A comment.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Comment {
     /// The item's unique id.
     pub id: u32,

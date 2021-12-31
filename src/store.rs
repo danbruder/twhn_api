@@ -7,10 +7,11 @@ use crate::{
 };
 use dashmap::DashMap;
 use futures::{stream, StreamExt};
+use std::time::{Duration, SystemTime};
 
 pub struct Store {
     client: HnClient,
-    item_cache: DashMap<u32, Item>,
+    item_cache: DashMap<u32, (Item, SystemTime)>,
 }
 
 impl Store {
@@ -24,15 +25,34 @@ impl Store {
     }
 
     pub async fn get_item(&self, id: u32) -> Result<Option<Item>> {
-        if let Some(item) = self.item_cache.get(&id) {
-            Ok(Some(item.clone()))
+        // 5 minutes of caching
+        let deadline = Duration::from_secs(60 * 5);
+        let item = self
+            .item_cache
+            .get(&id)
+            .as_deref()
+            .map(|(item, time)| (item.clone(), time.elapsed().ok()));
+
+        match item {
+            // Poor man's eviction
+            Some((_, Some(elapsed))) if elapsed >= deadline => self.get_and_cache_item(id).await,
+            Some((_, None)) => self.get_and_cache_item(id).await,
+            Some((item, _)) => Ok(Some(item.clone())),
+            None => self.get_and_cache_item(id).await,
+        }
+    }
+
+    async fn get_and_cache_item(&self, id: u32) -> Result<Option<Item>> {
+        // Get a new one
+        if let Some(item) = self.client.get_item(id).await.ok().flatten() {
+            self.item_cache
+                .insert(item.id(), (item.clone(), SystemTime::now()));
+            // Store it
+            Ok(Some(item))
         } else {
-            if let Some(item) = self.client.get_item(id).await? {
-                self.item_cache.insert(item.id(), item.clone());
-                Ok(Some(item))
-            } else {
-                Ok(None)
-            }
+            // Clear cache
+            self.item_cache.remove(&id);
+            Ok(None)
         }
     }
 

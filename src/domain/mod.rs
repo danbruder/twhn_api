@@ -1,5 +1,5 @@
 use async_graphql::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub mod comment;
 pub mod story;
@@ -7,7 +7,7 @@ use comment::Comment;
 use story::Story;
 
 /// An API item, for example a story or a comment.
-#[derive(Debug, Clone, Deserialize, Union)]
+#[derive(Debug, Clone, Deserialize, Serialize, Union)]
 #[serde(tag = "type")]
 #[serde(rename_all = "lowercase")]
 pub enum Item {
