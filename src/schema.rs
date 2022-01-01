@@ -13,22 +13,55 @@ use crate::{
 impl QueryRoot {
     async fn top_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
         let store = ctx.data::<Store>()?;
-
-        let limit = limit.unwrap_or(50);
-        let limit = limit.min(50);
         let ids = store.get_top_stories().await?;
+        load_many(&store, ids, limit).await
+    }
 
-        let mut items = store
-            .get_items(ids.clone().into_iter().take(limit as usize).collect())
-            .await?;
+    async fn ask_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let ids = store.get_ask_stories().await?;
+        load_many(&store, ids, limit).await
+    }
 
-        Ok(ids.into_iter().filter_map(|id| items.remove(&id)).collect())
+    async fn job_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let ids = store.get_job_stories().await?;
+        load_many(&store, ids, limit).await
+    }
+
+    async fn best_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let ids = store.get_best_stories().await?;
+        load_many(&store, ids, limit).await
+    }
+
+    async fn new_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let ids = store.get_new_stories().await?;
+        load_many(&store, ids, limit).await
+    }
+
+    async fn show_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let ids = store.get_show_stories().await?;
+        load_many(&store, ids, limit).await
     }
 
     async fn item_by_id(&self, ctx: &Context<'_>, id: u32) -> Result<Option<Item>> {
         let store = ctx.data::<Store>()?;
         store.get_item(id).await
     }
+}
+
+async fn load_many(store: &Store, ids: Vec<u32>, limit: Option<u32>) -> Result<Vec<Item>> {
+    let limit = limit.unwrap_or(50);
+    let limit = limit.min(50);
+
+    let mut items = store
+        .get_items(ids.clone().into_iter().take(limit as usize).collect())
+        .await?;
+
+    Ok(ids.into_iter().filter_map(|id| items.remove(&id)).collect())
 }
 
 #[Object]

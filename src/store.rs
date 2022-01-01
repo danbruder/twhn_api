@@ -120,4 +120,24 @@ impl Store {
     pub async fn get_top_stories(&self) -> Result<Vec<u32>> {
         self.client.get_top_stories().await
     }
+
+    pub async fn get_ask_stories(&self) -> Result<Vec<u32>> {
+        self.client.get_ask_stories().await
+    }
+
+    pub async fn get_show_stories(&self) -> Result<Vec<u32>> {
+        self.client.get_show_stories().await
+    }
+
+    pub async fn get_job_stories(&self) -> Result<Vec<u32>> {
+        self.client.get_job_stories().await
+    }
+
+    pub async fn get_best_stories(&self) -> Result<Vec<u32>> {
+        self.client.get_best_stories().await
+    }
+
+    pub async fn get_new_stories(&self) -> Result<Vec<u32>> {
+        self.client.get_new_stories().await
+    }
 }
