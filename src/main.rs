@@ -1,11 +1,12 @@
 use std::convert::Infallible;
-//use std::env;
+use std::str::FromStr;
 
 use ::http::StatusCode;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::*;
 use async_graphql_warp::{GraphQLBadRequest, GraphQLResponse};
 use dotenv::dotenv;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 
 #[allow(dead_code)]
@@ -23,9 +24,15 @@ use store::Store;
 async fn main() {
     dotenv().ok();
 
+    let options = SqliteConnectOptions::from_str("sqlite://data.db")
+        .unwrap()
+        .create_if_missing(true);
+    let pool = SqlitePoolOptions::new().connect_lazy_with(options);
+
     let store = Store::new();
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(store)
+        .data(pool)
         .finish();
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
