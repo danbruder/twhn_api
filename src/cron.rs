@@ -11,7 +11,7 @@ pub async fn start(store: Store, pool: SqlitePool) {
         if result.is_err() {
             println!("Got an error from save rank: {:?}", result);
         }
-        sleep(Duration::from_secs(10)).await;
+        sleep(Duration::from_secs(30)).await;
     }
 }
 
