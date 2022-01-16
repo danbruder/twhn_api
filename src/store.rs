@@ -9,6 +9,7 @@ use dashmap::DashMap;
 use futures::{stream, StreamExt};
 use std::time::{Duration, SystemTime};
 
+#[derive(Clone)]
 pub struct Store {
     client: HnClient,
     item_cache: DashMap<u32, (Item, SystemTime)>,

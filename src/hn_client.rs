@@ -5,6 +5,7 @@ use reqwest::{self, Client};
 
 static API_BASE_URL: &str = "https://hacker-news.firebaseio.com/v0";
 
+#[derive(Clone)]
 pub struct HnClient {
     client: Client,
 }

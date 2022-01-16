@@ -1,3 +1,13 @@
 {
-  "db": "SQLite"
+  "db": "SQLite",
+  "cd836a82cffeb578f95a2b7ac6a7a14621764ca14b382985d5e0bdd3aa4d121e": {
+    "query": "\n            INSERT INTO item_metric (item_id, metric, created_at, value)\n            VALUES (?1, 'rank', DATETIME('now'), ?2)\n                ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  }
 }

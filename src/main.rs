@@ -12,6 +12,7 @@ use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 #[allow(dead_code)]
 mod hn_client;
 
+mod cron;
 mod domain;
 mod result;
 mod schema;
@@ -32,8 +33,8 @@ async fn main() {
 
     let store = Store::new();
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
-        .data(store)
-        .data(pool)
+        .data(store.clone())
+        .data(pool.clone())
         .finish();
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
@@ -73,6 +74,8 @@ async fn main() {
             ))
         })
         .with(cors);
+
+    tokio::spawn(cron::start(store, pool));
 
     println!("Playground: http://localhost:8000");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
