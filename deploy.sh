@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -e
+
 echo "Building..."
 docker build -t danbruder/twhn_api:latest .
 

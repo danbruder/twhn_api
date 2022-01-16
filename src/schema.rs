@@ -1,6 +1,7 @@
 use ammonia::clean;
 use async_graphql::*;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
+use sqlx::SqlitePool;
 
 pub struct QueryRoot;
 use crate::{
@@ -62,6 +63,14 @@ async fn load_many(store: &Store, ids: Vec<u32>, limit: Option<u32>) -> Result<V
         .await?;
 
     Ok(ids.into_iter().filter_map(|id| items.remove(&id)).collect())
+}
+
+#[derive(SimpleObject)]
+struct ItemMetric {
+    item_id: i64,
+    metric: String,
+    value: i64,
+    created_at: NaiveDateTime,
 }
 
 #[Object]
@@ -126,6 +135,28 @@ impl Story {
 
     async fn human_time(&self) -> String {
         chrono_humanize::HumanTime::from(self.time.clone()).to_string()
+    }
+
+    async fn rank(&self, ctx: &Context<'_>) -> Result<Vec<ItemMetric>> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let metrics = sqlx::query_as!(
+            ItemMetric,
+            r#"
+            SELECT 
+                * 
+            FROM 
+                item_metric
+            WHERE
+                item_id = ?1
+            ORDER BY 
+                created_at DESC
+            "#,
+            self.id
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(metrics)
     }
 }
 
