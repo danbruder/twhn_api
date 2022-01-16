@@ -24,7 +24,7 @@ RUN cargo build --release
 FROM debian:buster-slim AS runtime
 WORKDIR /app
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends ca-certificates openssl libpq-dev \
+    && apt-get install -y --no-install-recommends ca-certificates openssl libpq-dev build-essential sqlite3 \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
