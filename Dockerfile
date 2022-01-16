@@ -21,4 +21,5 @@ FROM rust:1.57.0 AS runtime
 WORKDIR /app
 EXPOSE 8000
 COPY --from=builder /app/target/release/twhn_api /usr/local/bin/twhn_api
+COPY --from=builder /app/migrations /app/migrations
 CMD ["twhn_api"]

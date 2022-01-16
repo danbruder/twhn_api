@@ -28,6 +28,7 @@ async fn main() {
         .unwrap()
         .create_if_missing(true);
     let pool = SqlitePoolOptions::new().connect_lazy_with(options);
+    sqlx::migrate!().run(&pool).await.ok();
 
     let store = Store::new();
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
