@@ -1,16 +1,19 @@
 use std::convert::Infallible;
-//use std::env;
+use std::env;
+use std::str::FromStr;
 
 use ::http::StatusCode;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::*;
 use async_graphql_warp::{GraphQLBadRequest, GraphQLResponse};
 use dotenv::dotenv;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 
 #[allow(dead_code)]
 mod hn_client;
 
+mod cron;
 mod domain;
 mod result;
 mod schema;
@@ -22,10 +25,18 @@ use store::Store;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://data.db".to_string());
+
+    let options = SqliteConnectOptions::from_str(&database_url)
+        .unwrap()
+        .create_if_missing(true);
+    let pool = SqlitePoolOptions::new().connect_lazy_with(options);
+    sqlx::migrate!().run(&pool).await.ok();
 
     let store = Store::new();
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
-        .data(store)
+        .data(store.clone())
+        .data(pool.clone())
         .finish();
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
@@ -65,6 +76,8 @@ async fn main() {
             ))
         })
         .with(cors);
+
+    tokio::spawn(cron::start(store, pool));
 
     println!("Playground: http://localhost:8000");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;

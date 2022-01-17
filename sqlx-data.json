@@ -1,3 +1,49 @@
 {
-  "db": "SQLite"
+  "db": "SQLite",
+  "cd836a82cffeb578f95a2b7ac6a7a14621764ca14b382985d5e0bdd3aa4d121e": {
+    "query": "\n            INSERT INTO item_metric (item_id, metric, created_at, value)\n            VALUES (?1, 'rank', DATETIME('now'), ?2)\n                ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "f85fad5ec1b506cb97cdd0cebe7db91ed993570ad79f5bc9fd306d20c33b4545": {
+    "query": "\n            SELECT \n                * \n            FROM \n                item_metric\n            WHERE\n                item_id = ?1\n            ORDER BY \n                created_at DESC\n            ",
+    "describe": {
+      "columns": [
+        {
+          "name": "item_id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "metric",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 2,
+          "type_info": "Datetime"
+        },
+        {
+          "name": "value",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  }
 }

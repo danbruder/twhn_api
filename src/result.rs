@@ -13,10 +13,18 @@ pub enum Error {
     ReqwestError(#[from] reqwest::Error),
     #[error("query error")]
     GraphqlError(async_graphql::Error),
+    #[error("database error")]
+    DatabaseError(sqlx::Error),
 }
 
 impl From<async_graphql::Error> for Error {
     fn from(err: async_graphql::Error) -> Self {
         Error::GraphqlError(err)
+    }
+}
+
+impl From<sqlx::Error> for Error {
+    fn from(err: sqlx::Error) -> Self {
+        Error::DatabaseError(err)
     }
 }
