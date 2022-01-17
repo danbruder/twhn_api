@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::env;
 use std::str::FromStr;
 
 use ::http::StatusCode;
@@ -24,8 +25,9 @@ use store::Store;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://data.db".to_string());
 
-    let options = SqliteConnectOptions::from_str("sqlite://data.db")
+    let options = SqliteConnectOptions::from_str(&database_url)
         .unwrap()
         .create_if_missing(true);
     let pool = SqlitePoolOptions::new().connect_lazy_with(options);
