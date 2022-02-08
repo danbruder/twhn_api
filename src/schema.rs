@@ -306,7 +306,7 @@ pub struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-    async fn bookmark_item(&self, ctx: &Context<'_>, item_id: u32) -> Result<bool> {
+    async fn bookmark_item(&self, ctx: &Context<'_>, item_id: u32) -> Result<Option<Item>> {
         let pool = ctx.data::<SqlitePool>()?;
 
         // Insert a bookmarked item
@@ -324,6 +324,7 @@ impl MutationRoot {
         .execute(&*pool)
         .await?;
 
-        Ok(true)
+        let store = ctx.data::<Store>()?;
+        store.get_item(item_id).await
     }
 }
