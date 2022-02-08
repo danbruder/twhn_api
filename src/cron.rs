@@ -29,7 +29,7 @@ async fn save_rank(pool: &SqlitePool, top_stories: Vec<u32>, ts: DateTime<Utc>) 
 
     let mut tx = pool.begin().await?;
 
-    for (rank, id) in top_stories.into_iter().take(100).enumerate() {
+    for (rank, id) in top_stories.into_iter().take(30).enumerate() {
         let id = id as i64;
         let rank = (rank + 1) as i64;
 

@@ -4,6 +4,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::SqlitePool;
 
 pub struct QueryRoot;
+
 use crate::{
     domain::{comment::Comment, job::Job, story::Story, Item},
     result::Result,
@@ -51,6 +52,30 @@ impl QueryRoot {
     async fn item_by_id(&self, ctx: &Context<'_>, id: u32) -> Result<Option<Item>> {
         let store = ctx.data::<Store>()?;
         store.get_item(id).await
+    }
+
+    async fn bookmarked_items(&self, ctx: &Context<'_>) -> Result<Vec<Item>> {
+        let store = ctx.data::<Store>()?;
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Get bookmarked ids
+        let ids = sqlx::query!(
+            r#"
+            SELECT 
+                item_id 
+            FROM 
+                bookmarked_item
+            ORDER BY 
+                created_at DESC;
+            "#,
+        )
+        .fetch_all(&*pool)
+        .await?
+        .into_iter()
+        .map(|row| row.item_id as u32)
+        .collect::<Vec<u32>>();
+
+        load_many(&store, ids, None).await
     }
 }
 
@@ -158,6 +183,27 @@ impl Story {
 
         Ok(metrics)
     }
+
+    async fn is_bookmarked(&self, ctx: &Context<'_>) -> Result<bool> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Get bookmarked ids
+        let is_bookmarked = sqlx::query!(
+            r#"
+            SELECT 
+                item_id 
+            FROM 
+                bookmarked_item
+            WHERE
+                item_id = ?1
+            "#,
+            self.id
+        )
+        .fetch_optional(&*pool)
+        .await?;
+
+        Ok(is_bookmarked.is_some())
+    }
 }
 
 #[Object]
@@ -252,5 +298,32 @@ impl Job {
 
     async fn human_time(&self) -> String {
         chrono_humanize::HumanTime::from(self.time.clone()).to_string()
+    }
+}
+
+// Mutations
+pub struct MutationRoot;
+
+#[Object]
+impl MutationRoot {
+    async fn bookmark_item(&self, ctx: &Context<'_>, item_id: u32) -> Result<bool> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Insert a bookmarked item
+        let now = Utc::now();
+        let _ = sqlx::query!(
+            r#"
+        INSERT INTO 
+            bookmarked_item (item_id, user_id, created_at)
+        VALUES
+            (?1, "dan", ?2)
+        "#,
+            item_id,
+            now
+        )
+        .execute(&*pool)
+        .await?;
+
+        Ok(true)
     }
 }

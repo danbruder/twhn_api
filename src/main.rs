@@ -19,7 +19,7 @@ mod result;
 mod schema;
 mod store;
 
-use schema::QueryRoot;
+use schema::{MutationRoot, QueryRoot};
 use store::Store;
 
 #[tokio::main]
@@ -34,14 +34,14 @@ async fn main() {
     sqlx::migrate!().run(&pool).await.ok();
 
     let store = Store::new();
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .data(store.clone())
         .data(pool.clone())
         .finish();
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
         |(schema, request): (
-            Schema<QueryRoot, EmptyMutation, EmptySubscription>,
+            Schema<QueryRoot, MutationRoot, EmptySubscription>,
             async_graphql::Request,
         )| async move {
             Ok::<_, Infallible>(GraphQLResponse::from(schema.execute(request).await))
