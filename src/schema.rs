@@ -54,7 +54,7 @@ impl QueryRoot {
         store.get_item(id).await
     }
 
-    async fn bookmarked_items(&self, ctx: &Context<'_>) -> Result<Vec<Item>> {
+    async fn bookmarked_items(&self, ctx: &Context<'_>, _limit: Option<u32>) -> Result<Vec<Item>> {
         let store = ctx.data::<Store>()?;
         let pool = ctx.data::<SqlitePool>()?;
 
