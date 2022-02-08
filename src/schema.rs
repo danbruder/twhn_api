@@ -327,4 +327,26 @@ impl MutationRoot {
         let store = ctx.data::<Store>()?;
         store.get_item(item_id).await
     }
+
+    async fn unbookmark_item(&self, ctx: &Context<'_>, item_id: u32) -> Result<Option<Item>> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Insert a bookmarked item
+        let _ = sqlx::query!(
+            r#"
+            DELETE FROM 
+                bookmarked_item 
+            WHERE
+                item_id = ?1
+            AND
+                user_id = "dan"
+            "#,
+            item_id,
+        )
+        .execute(&*pool)
+        .await?;
+
+        let store = ctx.data::<Store>()?;
+        store.get_item(item_id).await
+    }
 }
