@@ -97,6 +97,30 @@ impl QueryRoot {
 
         load_many(&store, ids, None).await
     }
+
+    async fn stats(&self, ctx: &Context<'_>) -> Result<Stats> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Get bookmarked ids
+        let (max_item_id, min_item_id, item_count): (i64, i64, i64) = sqlx::query_as(
+            r#"
+            SELECT 
+                max(id) as max_item_id, 
+                min(id) as min_item_id,
+                count(id) as item_count
+            FROM 
+                item
+            "#,
+        )
+        .fetch_one(&*pool)
+        .await?;
+
+        Ok(Stats {
+            max_item_id,
+            min_item_id,
+            item_count,
+        })
+    }
 }
 
 async fn load_many(store: &Store, ids: Vec<u32>, limit: Option<u32>) -> Result<Vec<Item>> {
@@ -116,6 +140,13 @@ struct ItemMetric {
     metric: String,
     value: i64,
     created_at: NaiveDateTime,
+}
+
+#[derive(SimpleObject)]
+struct Stats {
+    item_count: i64,
+    min_item_id: i64,
+    max_item_id: i64,
 }
 
 #[Object]
