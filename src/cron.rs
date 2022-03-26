@@ -6,6 +6,18 @@ use tokio::time::{sleep, Duration};
 
 pub async fn start(store: Store, pool: SqlitePool) {
     println!("Starting background work...");
+    let pool_ = pool.clone();
+    let store_ = store.clone();
+
+    tokio::spawn(async move {
+        loop {
+            let result = backfill_some(&pool_, &store_, 10000).await;
+            if result.is_err() {
+                println!("Got an error from backfilling: {:?}", result);
+            }
+            sleep(Duration::from_secs(5)).await;
+        }
+    });
 
     loop {
         if let Ok(top_stories) = store.get_top_stories().await {
@@ -32,12 +44,6 @@ pub async fn start(store: Store, pool: SqlitePool) {
             if result.is_err() {
                 println!("Got an error from loading updates: {:?}", result);
             }
-        }
-        sleep(Duration::from_secs(20)).await;
-
-        let result = backfill_some(&pool, &store, 10000).await;
-        if result.is_err() {
-            println!("Got an error from backfilling: {:?}", result);
         }
         sleep(Duration::from_secs(20)).await;
     }
