@@ -8,6 +8,7 @@ pub async fn start(store: Store, pool: SqlitePool) {
     println!("Starting background work...");
 
     loop {
+        sleep(Duration::from_secs(20)).await;
         if let Ok(top_stories) = store.get_top_stories().await {
             println!("Got top stories, saving rank...");
 
@@ -23,7 +24,7 @@ pub async fn start(store: Store, pool: SqlitePool) {
                 println!("Got an error from loading item and children: {:?}", result);
             }
         }
-        sleep(Duration::from_secs(30)).await;
+        sleep(Duration::from_secs(20)).await;
 
         if let Ok(updates) = store.get_updates().await {
             println!("Got updates");
@@ -33,7 +34,12 @@ pub async fn start(store: Store, pool: SqlitePool) {
                 println!("Got an error from loading updates: {:?}", result);
             }
         }
-        sleep(Duration::from_secs(30)).await;
+        sleep(Duration::from_secs(20)).await;
+
+        let result = backfill_some(&pool, &store, 5000).await;
+        if result.is_err() {
+            println!("Got an error from backfilling: {:?}", result);
+        }
     }
 }
 
@@ -106,6 +112,23 @@ async fn save_rank(pool: &SqlitePool, top_stories: Vec<u32>, ts: DateTime<Utc>) 
     }
 
     tx.commit().await?;
+
+    Ok(())
+}
+async fn backfill_some(pool: &SqlitePool, store: &Store, limit: i64) -> Result<()> {
+    // Get lowest number we have
+    let top: (i64,) = sqlx::query_as("SELECT min(id) FROM item")
+        .fetch_one(&*pool)
+        .await?;
+
+    let top = top.0;
+    let bottom = (top - limit).max(0_i64);
+    let range = (bottom..top)
+        .into_iter()
+        .map(|v| v as u32)
+        .collect::<Vec<_>>();
+
+    let _ = store.get_and_store_items(range).await;
 
     Ok(())
 }

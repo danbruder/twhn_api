@@ -23,6 +23,7 @@ impl Store {
     }
 
     pub async fn get_item(&self, id: u32) -> Result<Option<Item>> {
+        println!("GET {}", id);
         if let Some(item) = db::Item::load(id).fetch_optional(&self.pool).await? {
             return Ok(Some(item.into()));
         }
