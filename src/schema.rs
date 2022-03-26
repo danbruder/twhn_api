@@ -17,7 +17,7 @@ impl QueryRoot {
         let store = ctx.data::<Store>()?;
         let pool = ctx.data::<SqlitePool>()?;
 
-        // Get bookmarked ids
+        // Get top items
         let ids = sqlx::query!(
             r#"
             SELECT 

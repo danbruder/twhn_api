@@ -14,6 +14,7 @@ use warp::{http::Method, http::Response as HttpResponse, Filter, Rejection};
 mod hn_client;
 
 mod cron;
+mod db;
 mod domain;
 mod result;
 mod schema;
