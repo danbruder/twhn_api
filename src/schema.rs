@@ -15,7 +15,27 @@ use crate::{
 impl QueryRoot {
     async fn top_items(&self, ctx: &Context<'_>, limit: Option<u32>) -> Result<Vec<Item>> {
         let store = ctx.data::<Store>()?;
-        let ids = store.get_top_stories().await?;
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Get bookmarked ids
+        let ids = sqlx::query!(
+            r#"
+            SELECT 
+                item_id 
+            FROM 
+                list
+            WHERE
+                key = 'top_stories'
+            ORDER BY 
+               ordering ASC
+            "#,
+        )
+        .fetch_all(&*pool)
+        .await?
+        .into_iter()
+        .map(|row| row.item_id as u32)
+        .collect::<Vec<u32>>();
+
         load_many(&store, ids, limit).await
     }
 
