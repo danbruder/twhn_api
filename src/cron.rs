@@ -29,9 +29,29 @@ async fn save_rank(pool: &SqlitePool, top_stories: Vec<u32>, ts: DateTime<Utc>) 
 
     let mut tx = pool.begin().await?;
 
-    for (rank, id) in top_stories.into_iter().take(30).enumerate() {
+    // Delete the old top items
+    sqlx::query!("DELETE FROM list WHERE key = 'top_stories'")
+        .execute(&mut tx)
+        .await?;
+
+    // Save the rank
+    for (ordering, id) in top_stories.into_iter().take(30).enumerate() {
         let id = id as i64;
-        let rank = (rank + 1) as i64;
+        let ordering = ordering as i64;
+        let rank = (ordering + 1) as i64;
+
+        // Save the current list
+        sqlx::query!(
+            r#"
+        INSERT INTO list (key, item_id, ordering, created_at)
+        VALUES ('top_stories', ?1, ?2, ?3)
+        "#,
+            id,
+            ordering,
+            ts,
+        )
+        .execute(&mut tx)
+        .await?;
 
         // Get latest value
         let existing = sqlx::query_as!(
@@ -69,7 +89,6 @@ async fn save_rank(pool: &SqlitePool, top_stories: Vec<u32>, ts: DateTime<Utc>) 
         }
     }
 
-    println!("Done saving!");
     tx.commit().await?;
 
     Ok(())
@@ -142,5 +161,30 @@ mod test {
 
         let want = vec![(1,), (2,), (1,)];
         assert_eq!(got, want)
+    }
+
+    #[tokio::test]
+    async fn saves_top_stories() {
+        let pool = setup().await;
+
+        save_rank(&pool, vec![40], Utc::now()).await.unwrap();
+
+        let got: Vec<(i64, i64)> = sqlx::query_as("SELECT item_id, ordering FROM list")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let want = vec![(40, 0)];
+        assert_eq!(got, want);
+
+        save_rank(&pool, vec![41], Utc::now()).await.unwrap();
+
+        let got: Vec<(i64, i64)> = sqlx::query_as("SELECT item_id, ordering FROM list")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let want = vec![(41, 0)];
+        assert_eq!(got, want);
     }
 }
