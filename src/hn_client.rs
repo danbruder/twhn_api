@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{domain::Item, result::Result};
+use crate::{domain::Item, domain::Updates, result::Result};
 use reqwest::{self, Client};
 
 static API_BASE_URL: &str = "https://hacker-news.firebaseio.com/v0";
@@ -94,6 +94,16 @@ impl HnClient {
         Ok(self
             .client
             .get(&format!("{}/jobstories.json", API_BASE_URL))
+            .send()
+            .await?
+            .json()
+            .await?)
+    }
+
+    pub async fn get_updates(&self) -> Result<Updates> {
+        Ok(self
+            .client
+            .get(&format!("{}/updates.json", API_BASE_URL))
             .send()
             .await?
             .json()

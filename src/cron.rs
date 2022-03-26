@@ -12,12 +12,28 @@ pub async fn start(store: Store, pool: SqlitePool) {
             println!("Got top stories, saving rank...");
 
             let now = Utc::now();
-            let result = save_rank(&pool, top_stories, now).await;
+            let result = save_rank(&pool, top_stories.clone(), now).await;
             if result.is_err() {
                 println!("Got an error from save rank: {:?}", result);
             }
+
+            // Cache the items
+            let result = store.get_items(top_stories).await;
+            if result.is_err() {
+                println!("Got an error from loading item and children: {:?}", result);
+            }
         }
-        sleep(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(30)).await;
+
+        if let Ok(updates) = store.get_updates().await {
+            println!("Got updates");
+
+            let result = store.get_and_store_items(updates.items).await;
+            if result.is_err() {
+                println!("Got an error from loading updates: {:?}", result);
+            }
+        }
+        sleep(Duration::from_secs(30)).await;
     }
 }
 

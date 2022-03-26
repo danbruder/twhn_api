@@ -25,6 +25,7 @@ impl From<async_graphql::Error> for Error {
 
 impl From<sqlx::Error> for Error {
     fn from(err: sqlx::Error) -> Self {
+        dbg!(&err);
         Error::DatabaseError(err)
     }
 }

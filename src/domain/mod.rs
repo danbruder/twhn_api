@@ -22,14 +22,6 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn id(&self) -> u32 {
-        match self {
-            Item::Story(story) => story.id,
-            Item::Comment(comment) => comment.id,
-            Item::Job(job) => job.id,
-        }
-    }
-
     pub fn kids(&self) -> Vec<u32> {
         match self {
             Item::Story(story) => story.kids.clone().unwrap_or_default(),
@@ -44,4 +36,13 @@ impl Item {
             _ => None,
         }
     }
+}
+
+/// A list of recently updated items and users.
+#[derive(Debug, Deserialize)]
+pub struct Updates {
+    /// A list of recently changed items.
+    pub items: Vec<u32>,
+    /// A list of recently changed usernames.
+    pub profiles: Vec<String>,
 }

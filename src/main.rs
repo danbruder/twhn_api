@@ -34,7 +34,7 @@ async fn main() {
     let pool = SqlitePoolOptions::new().connect_lazy_with(options);
     sqlx::migrate!().run(&pool).await.ok();
 
-    let store = Store::new();
+    let store = Store::new(pool.clone());
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .data(store.clone())
         .data(pool.clone())

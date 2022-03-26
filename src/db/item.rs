@@ -8,19 +8,19 @@ use sqlx::{
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, sqlx::FromRow)]
 pub struct Item {
-    pub id: i64,
-    pub original: String,
-    pub descendants: Option<i64>,
-    pub username: Option<String>,
-    pub score: Option<i64>,
-    pub title: Option<String>,
-    pub url: Option<String>,
-    pub body: Option<String>,
-    pub time: Option<DateTime<Utc>>,
+    id: i64,
+    original: String,
+    descendants: Option<i64>,
+    username: Option<String>,
+    score: Option<i64>,
+    title: Option<String>,
+    url: Option<String>,
+    body: Option<String>,
+    time: Option<DateTime<Utc>>,
 }
 
 impl Item {
-    pub fn load<'a>(&'a self) -> QueryAs<'a, Sqlite, Item, SqliteArguments> {
+    pub fn load<'a>(id: u32) -> QueryAs<'a, Sqlite, Item, SqliteArguments<'a>> {
         sqlx::query_as::<Sqlite, Item>(
             r#"
             SELECT * FROM item
@@ -28,13 +28,13 @@ impl Item {
             LIMIT 1
             "#,
         )
-        .bind(self.id)
+        .bind(id as i64)
     }
 
     pub fn insert<'a>(&'a self) -> Query<'a, Sqlite, SqliteArguments> {
         sqlx::query!(
             r#"
-            INSERT INTO item (id, original, descendants, username, score, title, url, body, time)
+            INSERT OR REPLACE INTO item (id, original, descendants, username, score, title, url, body, time)
             VALUES 
             (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
             "#,
@@ -92,6 +92,12 @@ impl From<domain::Item> for Item {
     }
 }
 
+impl From<Item> for domain::Item {
+    fn from(input: Item) -> Self {
+        serde_json::from_str(&input.original).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -124,7 +130,7 @@ mod test {
 
         item.insert().execute(&pool).await.unwrap();
 
-        let got = item.load().fetch_one(&pool).await.unwrap();
+        let got = Item::load(1).fetch_one(&pool).await.unwrap();
         let want = item;
         assert_eq!(got, want);
     }
