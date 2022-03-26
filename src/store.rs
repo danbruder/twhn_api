@@ -46,7 +46,7 @@ impl Store {
     pub async fn get_items(&self, ids: Vec<u32>) -> Result<HashMap<u32, Item>> {
         stream::iter(ids)
             .map(|id| async move { Ok::<_, Error>((id, self.get_item(id).await?)) })
-            .buffer_unordered(50)
+            .buffer_unordered(500)
             .fold(Ok(HashMap::new()), |output, next| async {
                 let mut output = output?;
                 if let (id, Some(story)) = next? {
