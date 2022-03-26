@@ -57,17 +57,17 @@ impl Store {
     }
 
     pub async fn get_and_store_items(&self, ids: Vec<u32>) -> Result<HashMap<u32, Item>> {
-        stream::iter(ids)
-            .map(|id| async move { Ok::<_, Error>((id, self.get_and_store_item(id).await?)) })
-            .buffer_unordered(50)
-            .fold(Ok(HashMap::new()), |output, next| async {
-                let mut output = output?;
-                if let (id, Some(story)) = next? {
-                    output.insert(id, story);
-                }
-                Ok(output)
-            })
-            .await
+        let items = self.get_items(ids).await?;
+
+        let mut tx = self.pool.begin().await?;
+        for (_, item) in items.iter() {
+            let db_item: db::Item = item.clone().into();
+            db_item.insert().execute(&mut tx).await?;
+        }
+
+        tx.commit().await?;
+
+        Ok(items)
     }
 
     pub async fn get_descendants(&self, id: u32) -> Result<HashMap<u32, Item>> {
