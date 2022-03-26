@@ -145,4 +145,8 @@ impl Store {
     pub async fn get_updates(&self) -> Result<Updates> {
         self.client.get_updates().await
     }
+
+    pub async fn get_max_item_id(&self) -> Result<u32> {
+        self.client.get_max_item_id().await
+    }
 }
