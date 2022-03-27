@@ -18,7 +18,7 @@ COPY --from=cacher $CARGO_HOME $CARGO_HOME
 RUN cargo build --release
 
 FROM rust:1.58.0 AS runtime
-RUN sudo apt-get update -y && sudo apt-get install awscli sqlite3 -y
+RUN  apt-get update -y &&  apt-get install awscli sqlite3 -y
 WORKDIR /app
 EXPOSE 8000
 COPY --from=builder /app/target/release/twhn_api /usr/local/bin/twhn_api
