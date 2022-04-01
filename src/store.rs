@@ -58,7 +58,20 @@ impl Store {
     }
 
     pub async fn get_and_store_items(&self, ids: Vec<u32>) -> Result<HashMap<u32, Item>> {
-        let items = self.get_items(ids).await?;
+        let items = stream::iter(ids)
+            .map(|id| async move { Ok::<_, Error>((id, self.client.get_item(id).await?)) })
+            .buffer_unordered(500)
+            .fold(
+                Ok(HashMap::new()),
+                |output: Result<HashMap<u32, Item>>, next| async {
+                    let mut output = output?;
+                    if let (id, Some(story)) = next? {
+                        output.insert(id, story);
+                    }
+                    Ok(output)
+                },
+            )
+            .await?;
 
         let mut tx = self.pool.begin().await?;
         for (_, item) in items.iter() {
