@@ -98,28 +98,24 @@ impl QueryRoot {
         load_many(&store, ids, None).await
     }
 
-    async fn stats(&self, ctx: &Context<'_>) -> Result<Stats> {
+    async fn stats(&self, ctx: &Context<'_>) -> Result<i64> {
         let pool = ctx.data::<SqlitePool>()?;
 
         // Get bookmarked ids
-        let (max_item_id, min_item_id, item_count): (i64, i64, i64) = sqlx::query_as(
+        let (backfill_ptr,): (i64,) = sqlx::query_as(
             r#"
             SELECT 
-                max(id) as max_item_id, 
-                min(id) as min_item_id,
-                count(id) as item_count
+                value 
             FROM 
-                item
+                config
+            WHERE 
+                key='backfill_ptr'
             "#,
         )
         .fetch_one(&*pool)
         .await?;
 
-        Ok(Stats {
-            max_item_id,
-            min_item_id,
-            item_count,
-        })
+        Ok(backfill_ptr.0)
     }
 }
 
