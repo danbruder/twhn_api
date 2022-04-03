@@ -98,11 +98,11 @@ impl QueryRoot {
         load_many(&store, ids, None).await
     }
 
-    async fn stats(&self, ctx: &Context<'_>) -> Result<i64> {
+    async fn stats(&self, ctx: &Context<'_>) -> Result<String> {
         let pool = ctx.data::<SqlitePool>()?;
 
         // Get bookmarked ids
-        let (backfill_ptr,): (i64,) = sqlx::query_as(
+        let (backfill_ptr,): (String,) = sqlx::query_as(
             r#"
             SELECT 
                 value 
