@@ -115,7 +115,7 @@ impl QueryRoot {
         .fetch_one(&*pool)
         .await?;
 
-        Ok(backfill_ptr.0)
+        Ok(backfill_ptr)
     }
 }
 
