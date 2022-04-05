@@ -9,11 +9,6 @@ pub async fn start(store: Store, pool: SqlitePool) {
     let pool_ = pool.clone();
     let store_ = store.clone();
 
-    // tokio::spawn(async move {
-    //     loop {
-    //     }
-    // });
-
     loop {
         if let Ok(top_stories) = store.get_top_stories().await {
             println!("Got top stories, saving rank...");
@@ -41,13 +36,6 @@ pub async fn start(store: Store, pool: SqlitePool) {
             }
         }
         sleep(Duration::from_secs(20)).await;
-
-        // Keep getting new items
-        let result = backfill_some(&pool_, &store_, 10_000).await;
-        if result.is_err() {
-            println!("Got an error from backfilling: {:?}", result);
-        }
-        sleep(Duration::from_secs(5)).await;
     }
 }
 
