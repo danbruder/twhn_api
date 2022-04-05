@@ -9,15 +9,15 @@ pub async fn start(store: Store, pool: SqlitePool) {
     let pool_ = pool.clone();
     let store_ = store.clone();
 
-    tokio::spawn(async move {
-        loop {
-            let result = backfill_some(&pool_, &store_, 10000).await;
-            if result.is_err() {
-                println!("Got an error from backfilling: {:?}", result);
-            }
-            sleep(Duration::from_secs(5)).await;
-        }
-    });
+    // tokio::spawn(async move {
+    //     loop {
+    //         let result = backfill_some(&pool_, &store_, 10000).await;
+    //         if result.is_err() {
+    //             println!("Got an error from backfilling: {:?}", result);
+    //         }
+    //         sleep(Duration::from_secs(5)).await;
+    //     }
+    // });
 
     loop {
         if let Ok(top_stories) = store.get_top_stories().await {
@@ -121,32 +121,32 @@ async fn save_rank(pool: &SqlitePool, top_stories: Vec<u32>, ts: DateTime<Utc>) 
 
     Ok(())
 }
-async fn backfill_some(pool: &SqlitePool, store: &Store, limit: u32) -> Result<()> {
-    let max_item = store.get_max_item_id().await?;
+// async fn backfill_some(pool: &SqlitePool, store: &Store, limit: u32) -> Result<()> {
+//     let max_item = store.get_max_item_id().await?;
 
-    let start = sqlx::query!("SELECT value FROM config WHERE key='backfill_ptr'")
-        .fetch_optional(&*pool)
-        .await?
-        .map(|v| v.value.parse::<u32>().unwrap())
-        .unwrap_or(0);
-    let end = (start + limit).min(max_item);
+//     let start = sqlx::query!("SELECT value FROM config WHERE key='backfill_ptr'")
+//         .fetch_optional(&*pool)
+//         .await?
+//         .map(|v| v.value.parse::<u32>().unwrap())
+//         .unwrap_or(0);
+//     let end = (start + limit).min(max_item);
 
-    let range = (start..=end)
-        .into_iter()
-        .map(|v| v as u32)
-        .collect::<Vec<_>>();
+//     let range = (start..=end)
+//         .into_iter()
+//         .map(|v| v as u32)
+//         .collect::<Vec<_>>();
 
-    let _ = store.get_and_store_items(range).await;
+//     let _ = store.get_and_store_items(range).await;
 
-    sqlx::query!(
-        "INSERT OR REPLACE INTO config (key, value) VALUES ('backfill_ptr', ?1)",
-        end
-    )
-    .execute(&*pool)
-    .await?;
+//     sqlx::query!(
+//         "INSERT OR REPLACE INTO config (key, value) VALUES ('backfill_ptr', ?1)",
+//         end
+//     )
+//     .execute(&*pool)
+//     .await?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 #[cfg(test)]
 mod test {
