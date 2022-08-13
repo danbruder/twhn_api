@@ -311,6 +311,27 @@ impl Comment {
     async fn human_time(&self) -> String {
         chrono_humanize::HumanTime::from(self.time.clone()).to_string()
     }
+
+    async fn is_bookmarked(&self, ctx: &Context<'_>) -> Result<bool> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // Get bookmarked ids
+        let is_bookmarked = sqlx::query!(
+            r#"
+            SELECT 
+                item_id 
+            FROM 
+                bookmarked_item
+            WHERE
+                item_id = ?1
+            "#,
+            self.id
+        )
+        .fetch_optional(&*pool)
+        .await?;
+
+        Ok(is_bookmarked.is_some())
+    }
 }
 
 #[Object]
